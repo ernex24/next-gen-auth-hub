@@ -10,6 +10,7 @@ type AuthContextType = {
   loading: boolean;
   profile: any; // User profile data from the profiles table
   refreshProfile: () => Promise<void>;
+  error: Error | null; // Add the error property to the type definition
 };
 
 const AuthContext = createContext<AuthContextType>({
@@ -18,6 +19,7 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   profile: null,
   refreshProfile: async () => {},
+  error: null, // Initialize the error property
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
@@ -27,6 +29,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null); // Add state for error
   const { toast } = useToast();
 
   const fetchUserProfile = async (userId: string) => {
@@ -58,7 +61,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     // Get initial session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
+      if (error) {
+        setError(error);
+        console.error("Session retrieval error:", error);
+      }
+      
       setSession(session);
       setUser(session?.user ?? null);
       
@@ -68,22 +76,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
       
       setLoading(false);
+    }).catch(err => {
+      setError(err);
+      setLoading(false);
+      console.error("Auth session error:", err);
     });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          const profileData = await fetchUserProfile(session.user.id);
-          setProfile(profileData);
-        } else {
-          setProfile(null);
+        try {
+          setSession(session);
+          setUser(session?.user ?? null);
+          
+          if (session?.user) {
+            const profileData = await fetchUserProfile(session.user.id);
+            setProfile(profileData);
+          } else {
+            setProfile(null);
+          }
+          
+          setLoading(false);
+        } catch (err) {
+          setError(err instanceof Error ? err : new Error(String(err)));
+          setLoading(false);
+          console.error("Auth state change error:", err);
         }
-        
-        setLoading(false);
       }
     );
 
@@ -93,7 +111,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   return (
-    <AuthContext.Provider value={{ session, user, profile, loading, refreshProfile }}>
+    <AuthContext.Provider value={{ session, user, profile, loading, refreshProfile, error }}>
       {children}
     </AuthContext.Provider>
   );
