@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 
 const Index = () => {
   const [isLoaded, setIsLoaded] = useState(false);
-  const [isSignup, setIsSignup] = useState(true);
+  const [isSignup, setIsSignup] = useState(false);
 
   useEffect(() => {
     setIsLoaded(true);
