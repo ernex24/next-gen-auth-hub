@@ -31,6 +31,7 @@ export const useDashboardData = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [debugInfo, setDebugInfo] = useState<string | null>(null);
+  const [isDateFilterActive, setIsDateFilterActive] = useState<boolean>(false);
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: subDays(new Date(), 13),
     to: new Date(),
@@ -76,6 +77,8 @@ export const useDashboardData = () => {
             }));
             
             setAllSalesData(processedSalesData);
+            // Set initial data to all data
+            setSalesData(processedSalesData);
             console.log("Processed sales data:", processedSalesData);
           } else {
             console.log("No sales data found");
@@ -97,6 +100,8 @@ export const useDashboardData = () => {
           
           if (customersResult.data && customersResult.data.length > 0) {
             setAllCustomers(customersResult.data);
+            // Set initial customers to all customers (limit to top 5)
+            setCustomers(customersResult.data.slice(0, 5));
             console.log("Customer data:", customersResult.data);
           } else {
             console.log("No customers found");
@@ -163,7 +168,7 @@ export const useDashboardData = () => {
   }, [toast, user]);
 
   useEffect(() => {
-    if (dateRange?.from && dateRange?.to && allSalesData.length > 0) {
+    if (isDateFilterActive && dateRange?.from && dateRange?.to && allSalesData.length > 0) {
       try {
         console.log("Filtering data for date range:", dateRange.from, "to", dateRange.to);
         
@@ -195,11 +200,23 @@ export const useDashboardData = () => {
         setSalesData(allSalesData.map(({ date, amount }) => ({ date, amount })));
         setCustomers(allCustomers.slice(0, 5));
       }
+    } else if (!isDateFilterActive && allSalesData.length > 0) {
+      // When date filter is turned off, show all data
+      setSalesData(allSalesData);
+      setCustomers(allCustomers.slice(0, 5));
     }
-  }, [dateRange, allSalesData, allCustomers]);
+  }, [dateRange, allSalesData, allCustomers, isDateFilterActive]);
 
   const handleDateRangeChange = (range: DateRange | undefined) => {
     setDateRange(range);
+    // If a date range is selected, activate filtering
+    if (range?.from && range?.to) {
+      setIsDateFilterActive(true);
+    }
+  };
+
+  const toggleDateFilter = (active: boolean) => {
+    setIsDateFilterActive(active);
   };
 
   return {
@@ -211,7 +228,9 @@ export const useDashboardData = () => {
     error,
     debugInfo,
     dateRange,
+    isDateFilterActive,
     handleDateRangeChange,
+    toggleDateFilter,
     hasAnyData: allSalesData.length > 0 || allCustomers.length > 0 || viewsCount > 0 || activeUsers > 0
   };
 };

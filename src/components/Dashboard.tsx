@@ -17,7 +17,9 @@ const Dashboard = () => {
     error,
     debugInfo,
     dateRange,
+    isDateFilterActive,
     handleDateRangeChange,
+    toggleDateFilter,
     hasAnyData
   } = useDashboardData();
 
@@ -41,7 +43,9 @@ const Dashboard = () => {
     <div className="container px-6 py-8 mx-auto">
       <DashboardHeader 
         dateRange={dateRange} 
-        onDateRangeChange={handleDateRangeChange} 
+        onDateRangeChange={handleDateRangeChange}
+        isDateFilterActive={isDateFilterActive}
+        onToggleDateFilter={toggleDateFilter}
       />
       
       <StatsOverview 
