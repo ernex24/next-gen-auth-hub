@@ -4,13 +4,16 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { BarChart3, Users, Eye } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { DateRange } from 'react-day-picker';
+import { addDays, subDays, format, isWithinInterval, parseISO } from 'date-fns';
 
-// Import our new components
+// Import our components
 import StatCard from './dashboard/StatCard';
 import RevenueChart from './dashboard/RevenueChart';
 import CustomersTable from './dashboard/CustomersTable';
 import LoadingState from './dashboard/LoadingState';
 import EmptyState from './dashboard/EmptyState';
+import { DateRangePicker } from './dashboard/DateRangePicker';
 import { formatCurrency, formatLargeNumber } from './dashboard/utils';
 
 interface SalesData {
@@ -29,10 +32,16 @@ interface Customer {
 
 const Dashboard = () => {
   const [salesData, setSalesData] = useState<SalesData[]>([]);
+  const [allSalesData, setAllSalesData] = useState<SalesData[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [allCustomers, setAllCustomers] = useState<Customer[]>([]);
   const [viewsCount, setViewsCount] = useState<number>(0);
   const [activeUsers, setActiveUsers] = useState<number>(0);
   const [loading, setLoading] = useState(true);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: subDays(new Date(), 13),
+    to: new Date(),
+  });
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -58,22 +67,21 @@ const Dashboard = () => {
         
         console.log("Sales data fetched:", salesData?.length || 0, "records");
         
-        // Process sales data for the chart (get last 14 days)
+        // Process sales data for the chart
         const processedSalesData = (salesData || [])
-          .slice(-14)
           .map(item => ({
             date: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-            amount: Number(item.amount)
+            amount: Number(item.amount),
+            fullDate: item.date // Keep the full date for filtering
           }));
         
-        setSalesData(processedSalesData);
+        setAllSalesData(processedSalesData);
         
         // Fetch customers
         const { data: customersData, error: customersError } = await supabase
           .from('customers')
           .select('*')
-          .order('purchase_date', { ascending: false })
-          .limit(5);
+          .order('purchase_date', { ascending: false });
         
         if (customersError) {
           console.error('Customers error:', customersError);
@@ -81,7 +89,7 @@ const Dashboard = () => {
         }
         
         console.log("Customers fetched:", customersData?.length || 0, "records");
-        setCustomers(customersData || []);
+        setAllCustomers(customersData || []);
         
         // Fetch views count
         const { data: viewsData, error: viewsError } = await supabase
@@ -125,12 +133,43 @@ const Dashboard = () => {
     fetchDashboardData();
   }, [toast, user]);
 
+  // Filter data whenever the date range changes
+  useEffect(() => {
+    if (dateRange?.from && dateRange?.to) {
+      // Filter sales data based on date range
+      const filteredSalesData = allSalesData.filter(item => {
+        const itemDate = parseISO(item.fullDate);
+        return isWithinInterval(itemDate, { 
+          start: dateRange.from!, 
+          end: dateRange.to! 
+        });
+      }).map(({ date, amount }) => ({ date, amount })); // Remove fullDate from the filtered data
+      
+      setSalesData(filteredSalesData);
+      
+      // Filter customers based on date range
+      const filteredCustomers = allCustomers.filter(customer => {
+        const purchaseDate = parseISO(customer.purchase_date);
+        return isWithinInterval(purchaseDate, { 
+          start: dateRange.from!, 
+          end: dateRange.to! 
+        });
+      }).slice(0, 5); // Only take the first 5 for display
+      
+      setCustomers(filteredCustomers);
+    }
+  }, [dateRange, allSalesData, allCustomers]);
+
+  const handleDateRangeChange = (range: DateRange | undefined) => {
+    setDateRange(range);
+  };
+
   if (loading) {
     return <LoadingState />;
   }
 
   // Show empty state if no data is available
-  if (salesData.length === 0 && customers.length === 0) {
+  if (allSalesData.length === 0 && allCustomers.length === 0) {
     return (
       <div className="container px-6 py-8 mx-auto">
         <h1 className="text-2xl font-semibold text-foreground">Dashboard</h1>
@@ -142,14 +181,26 @@ const Dashboard = () => {
 
   return (
     <div className="container px-6 py-8 mx-auto">
-      <h1 className="text-2xl font-semibold text-foreground">Dashboard</h1>
-      <p className="mt-2 text-muted-foreground">Welcome to your dashboard</p>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+        <div>
+          <h1 className="text-2xl font-semibold text-foreground">Dashboard</h1>
+          <p className="mt-2 text-muted-foreground">Welcome to your dashboard</p>
+        </div>
+        <div className="mt-4 md:mt-0">
+          <DateRangePicker 
+            dateRange={dateRange} 
+            onDateRangeChange={handleDateRangeChange} 
+          />
+        </div>
+      </div>
       
       <div className="grid grid-cols-1 gap-6 mt-8 md:grid-cols-2 lg:grid-cols-4">
         {/* Revenue Card */}
         <StatCard 
           title="Revenue" 
-          value={salesData.length > 0 ? formatCurrency(salesData[salesData.length - 1].amount) : formatCurrency(0)}
+          value={salesData.length > 0 
+            ? formatCurrency(salesData.reduce((sum, item) => sum + item.amount, 0)) 
+            : formatCurrency(0)}
           icon={<BarChart3 className="w-4 h-4 text-muted-foreground" />}
           percentageChange={12.5}
         />
@@ -190,6 +241,13 @@ const Dashboard = () => {
       {customers.length > 0 && (
         <div className="mt-8">
           <CustomersTable customers={customers} />
+        </div>
+      )}
+      
+      {/* Empty state if filtered data is empty */}
+      {salesData.length === 0 && customers.length === 0 && (
+        <div className="mt-8">
+          <EmptyState message="No data found for the selected date range." />
         </div>
       )}
     </div>
