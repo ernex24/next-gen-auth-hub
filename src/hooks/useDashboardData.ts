@@ -26,6 +26,15 @@ export const useDashboardData = (): DashboardData => {
     toggleDateFilter
   } = useDateFilter(allSalesData, allCustomers);
 
+  // Additional debug information to help diagnose issues
+  const combinedDebugInfo = debugInfo ? 
+    `${debugInfo}\n\nDate filter active: ${isDateFilterActive}\nDate range: ${
+      dateRange?.from ? dateRange.from.toISOString().slice(0, 10) : 'none'
+    } to ${
+      dateRange?.to ? dateRange.to.toISOString().slice(0, 10) : 'none'
+    }\nSales data: ${salesData.length}/${allSalesData.length} records\nCustomers: ${customers.length}/${allCustomers.length} records` 
+    : null;
+
   return {
     salesData,
     customers,
@@ -33,7 +42,7 @@ export const useDashboardData = (): DashboardData => {
     activeUsers,
     loading,
     error,
-    debugInfo,
+    debugInfo: combinedDebugInfo,
     dateRange,
     isDateFilterActive,
     handleDateRangeChange,

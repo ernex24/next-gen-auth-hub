@@ -14,13 +14,28 @@ export const useDateFilter = (
     from: subDays(new Date(), 13),
     to: new Date(),
   });
-  const [salesData, setSalesData] = useState<SalesData[]>(allSalesData);
-  const [customers, setCustomers] = useState<Customer[]>(
-    allCustomers.slice(0, 5)
-  );
+  const [salesData, setSalesData] = useState<SalesData[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
 
+  // Update the filtered data whenever allSalesData, allCustomers, dateRange, or isDateFilterActive changes
   useEffect(() => {
-    if (isDateFilterActive && dateRange?.from && dateRange?.to && allSalesData.length > 0) {
+    console.log("Date filter effect running with:", {
+      salesDataLength: allSalesData?.length || 0,
+      customersLength: allCustomers?.length || 0,
+      isDateFilterActive,
+      dateRange
+    });
+
+    // Safety check for null/undefined data
+    if (!allSalesData || !allCustomers) {
+      console.log("No data available for filtering yet");
+      setSalesData([]);
+      setCustomers([]);
+      return;
+    }
+
+    // When filter is active and we have a valid date range
+    if (isDateFilterActive && dateRange?.from && dateRange?.to) {
       try {
         console.log("Filtering data for date range:", dateRange.from, "to", dateRange.to);
         
@@ -41,14 +56,16 @@ export const useDateFilter = (
         setSalesData(allSalesData);
         setCustomers(allCustomers.slice(0, 5));
       }
-    } else if (!isDateFilterActive && allSalesData.length > 0) {
-      // When date filter is turned off, show all data
+    } else {
+      // When date filter is turned off or no valid range, show all data
+      console.log("Date filter inactive, showing all data");
       setSalesData(allSalesData);
       setCustomers(allCustomers.slice(0, 5));
     }
   }, [dateRange, allSalesData, allCustomers, isDateFilterActive]);
 
   const handleDateRangeChange = (range: DateRange | undefined) => {
+    console.log("Date range changed to:", range);
     setDateRange(range);
     // If a date range is selected, activate filtering
     if (range?.from && range?.to) {
@@ -57,6 +74,7 @@ export const useDateFilter = (
   };
 
   const toggleDateFilter = (active: boolean) => {
+    console.log("Date filter toggled:", active);
     setIsDateFilterActive(active);
   };
 
