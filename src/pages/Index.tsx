@@ -15,6 +15,7 @@ const Index = () => {
   const [isSignup, setIsSignup] = useState(false);
   const { user, loading, error } = useAuth();
   const { toast } = useToast();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
     setIsLoaded(true);
@@ -28,7 +29,14 @@ const Index = () => {
       });
       console.error("Auth error:", error);
     }
-  }, [error, toast]);
+
+    // Log authentication status for debugging
+    console.log("Authentication status:", { 
+      user: user ? "Logged in" : "Not logged in", 
+      loading, 
+      error: error ? String(error) : "None" 
+    });
+  }, [error, toast, user, loading]);
 
   const toggleForm = () => {
     setIsSignup(!isSignup);
@@ -62,6 +70,7 @@ const Index = () => {
 
   const handleSignOut = async () => {
     try {
+      setIsLoggingOut(true);
       await signOut();
       // Clear browser storage on sign out
       localStorage.clear();
@@ -70,6 +79,7 @@ const Index = () => {
         title: "Signed out successfully",
         description: "You have been signed out of your account.",
       });
+      setIsLoggingOut(false);
     } catch (error) {
       console.error("Sign out error:", error);
       toast({
@@ -77,6 +87,7 @@ const Index = () => {
         description: "There was a problem signing you out. Please try again.",
         variant: "destructive",
       });
+      setIsLoggingOut(false);
     }
   };
 
@@ -101,9 +112,13 @@ const Index = () => {
             <h1 className="text-xl font-semibold text-foreground">Analytics Dashboard</h1>
             <button 
               onClick={handleSignOut}
-              className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-md text-sm transition-colors"
+              disabled={isLoggingOut}
+              className={cn(
+                "bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-md text-sm transition-colors",
+                isLoggingOut && "opacity-70 cursor-not-allowed"
+              )}
             >
-              Sign Out
+              {isLoggingOut ? "Signing Out..." : "Sign Out"}
             </button>
           </div>
         </header>
