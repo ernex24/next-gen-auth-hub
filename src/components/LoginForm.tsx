@@ -1,7 +1,11 @@
+
 import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { Apple, Chrome } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { login } from '@/integrations/supabase/auth';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from '@/components/ui/use-toast';
 
 interface LoginFormProps {
   onToggle: () => void;
@@ -13,21 +17,24 @@ const LoginForm = ({ onToggle }: LoginFormProps) => {
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     setIsSubmitting(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      console.log({
-        email,
-        password,
-        rememberMe
+    const { error } = await login(email, password);
+    
+    if (error) {
+      toast({
+        title: "Login failed",
+        description: error.message,
+        variant: "destructive",
       });
-      setIsSubmitting(false);
-    }, 1500);
+    }
+    
+    setIsSubmitting(false);
   };
 
   return (

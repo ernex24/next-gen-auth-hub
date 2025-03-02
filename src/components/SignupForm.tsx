@@ -1,7 +1,10 @@
+
 import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { Apple, Chrome } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { signUp } from '@/integrations/supabase/auth';
+import { toast } from '@/components/ui/use-toast';
 
 interface SignupFormProps {
   onToggle: () => void;
@@ -16,22 +19,30 @@ const SignupForm = ({ onToggle }: SignupFormProps) => {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!agreedToTerms) return;
     
     setIsSubmitting(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      console.log({
-        firstName,
-        lastName,
-        email,
-        password
+    const { error } = await signUp(email, password, firstName, lastName);
+    
+    if (error) {
+      toast({
+        title: "Signup failed",
+        description: error.message,
+        variant: "destructive",
       });
-      setIsSubmitting(false);
-    }, 1500);
+    } else {
+      // Reset form after successful signup
+      setFirstName('');
+      setLastName('');
+      setEmail('');
+      setPassword('');
+      setAgreedToTerms(false);
+    }
+    
+    setIsSubmitting(false);
   };
 
   return (
