@@ -13,13 +13,20 @@ const Index = () => {
     setIsLoaded(true);
   }, []);
 
+  const toggleForm = () => {
+    setIsSignup(!isSignup);
+  };
+
   return (
     <div className={cn(
       "transition-opacity duration-700",
       isLoaded ? "opacity-100" : "opacity-0"
     )}>
       <AuthLayout>
-        {isSignup ? <SignupForm /> : <LoginForm />}
+        {isSignup 
+          ? <SignupForm onToggle={toggleForm} /> 
+          : <LoginForm onToggle={toggleForm} />
+        }
       </AuthLayout>
     </div>
   );

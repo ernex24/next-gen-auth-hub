@@ -1,10 +1,13 @@
-
 import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { Apple, Chrome } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-const SignupForm = () => {
+interface SignupFormProps {
+  onToggle: () => void;
+}
+
+const SignupForm = ({ onToggle }: SignupFormProps) => {
   const [showPassword, setShowPassword] = useState(false);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -36,7 +39,7 @@ const SignupForm = () => {
       <div className="space-y-2">
         <h1 className="text-3xl font-semibold text-white">Create an account</h1>
         <p className="text-gray-400">
-          Already have an account? <a href="#" className="text-auth-purple-light hover:text-auth-purple transition-colors">Log in</a>
+          Already have an account? <button onClick={onToggle} className="text-auth-purple-light hover:text-auth-purple transition-colors">Log in</button>
         </p>
       </div>
 
