@@ -51,12 +51,14 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
+        console.log("Starting to fetch dashboard data...");
         setLoading(true);
         setError(null);
+        setDebugInfo(null);
         
         if (!user) {
           console.log("No authenticated user found!");
-          setDebugInfo("No authenticated user found");
+          setDebugInfo("No authenticated user found. Please sign in to view dashboard data.");
           setLoading(false);
           return;
         }
@@ -78,12 +80,13 @@ const Dashboard = () => {
           if (salesResult.data && salesResult.data.length > 0) {
             // Process sales data for the chart
             const processedSalesData = salesResult.data.map(item => ({
-              date: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+              date: format(new Date(item.date), 'MMM d'),
               amount: Number(item.amount),
               fullDate: item.date
             }));
             
             setAllSalesData(processedSalesData);
+            console.log("Processed sales data:", processedSalesData);
           } else {
             console.log("No sales data found");
             setDebugInfo(debugInfo => `${debugInfo || ""}\nNo sales data found in database`);
@@ -104,6 +107,7 @@ const Dashboard = () => {
           
           if (customersResult.data && customersResult.data.length > 0) {
             setAllCustomers(customersResult.data);
+            console.log("Customer data:", customersResult.data);
           } else {
             console.log("No customers found");
             setDebugInfo(debugInfo => `${debugInfo || ""}\nNo customers found in database`);
@@ -146,6 +150,7 @@ const Dashboard = () => {
           setDebugInfo(debugInfo => `${debugInfo || ""}\nNo active users data found in database`);
         }
         
+        console.log("All dashboard data fetched successfully");
         // Force loading to false even if we have some errors
         // This way the dashboard can still render with partial data
         setLoading(false);
@@ -157,7 +162,7 @@ const Dashboard = () => {
         setError(errorMessage);
         toast({
           title: "Error",
-          description: "Failed to load dashboard data. Please check the console for details.",
+          description: "Failed to load dashboard data. Please try refreshing the page.",
           variant: "destructive",
         });
         setLoading(false);
@@ -169,26 +174,37 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (dateRange?.from && dateRange?.to && allSalesData.length > 0) {
-      const filteredSalesData = allSalesData.filter(item => {
-        if (!item.fullDate) return false;
-        const itemDate = parseISO(item.fullDate);
-        return isWithinInterval(itemDate, { 
-          start: dateRange.from!, 
-          end: dateRange.to! 
-        });
-      }).map(({ date, amount }) => ({ date, amount }));
-      
-      setSalesData(filteredSalesData);
-      
-      const filteredCustomers = allCustomers.filter(customer => {
-        const purchaseDate = parseISO(customer.purchase_date);
-        return isWithinInterval(purchaseDate, { 
-          start: dateRange.from!, 
-          end: dateRange.to! 
-        });
-      }).slice(0, 5);
-      
-      setCustomers(filteredCustomers);
+      try {
+        console.log("Filtering data for date range:", dateRange.from, "to", dateRange.to);
+        
+        const filteredSalesData = allSalesData.filter(item => {
+          if (!item.fullDate) return false;
+          const itemDate = parseISO(item.fullDate);
+          return isWithinInterval(itemDate, { 
+            start: dateRange.from!, 
+            end: dateRange.to! 
+          });
+        }).map(({ date, amount }) => ({ date, amount }));
+        
+        console.log("Filtered sales data:", filteredSalesData.length, "records");
+        setSalesData(filteredSalesData);
+        
+        const filteredCustomers = allCustomers.filter(customer => {
+          const purchaseDate = parseISO(customer.purchase_date);
+          return isWithinInterval(purchaseDate, { 
+            start: dateRange.from!, 
+            end: dateRange.to! 
+          });
+        }).slice(0, 5);
+        
+        console.log("Filtered customers:", filteredCustomers.length, "records");
+        setCustomers(filteredCustomers);
+      } catch (err) {
+        console.error("Error filtering by date range:", err);
+        // Continue with unfiltered data if there's an error
+        setSalesData(allSalesData.map(({ date, amount }) => ({ date, amount })));
+        setCustomers(allCustomers.slice(0, 5));
+      }
     }
   }, [dateRange, allSalesData, allCustomers]);
 
@@ -209,7 +225,7 @@ const Dashboard = () => {
         <h1 className="text-2xl font-semibold text-foreground">Dashboard</h1>
         <p className="mt-2 text-muted-foreground">Welcome to your dashboard</p>
         <EmptyState message={
-          debugInfo ? `Debug info: ${debugInfo}` : "No data available yet. Data will appear here once it's generated."
+          debugInfo ? `${debugInfo}` : "No data available yet. Data will appear here once it's generated."
         } />
       </div>
     );

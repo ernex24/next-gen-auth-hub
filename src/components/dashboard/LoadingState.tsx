@@ -33,7 +33,8 @@ const LoadingState = ({ debug = false, error = null }: LoadingStateProps) => {
               <li>Authentication problems</li>
               <li>Empty database tables</li>
             </ul>
-            <p className="text-sm mt-4">Try checking the console logs for more details.</p>
+            <p className="text-sm mt-4">Check the browser console (F12) for more detailed logs.</p>
+            <p className="text-sm mt-2">If you're not signed in, please sign in to view the dashboard.</p>
           </div>
         )}
       </div>
