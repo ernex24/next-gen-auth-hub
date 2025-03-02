@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
@@ -292,7 +291,10 @@ const Dashboard = () => {
       
       {salesData.length === 0 && customers.length === 0 && (
         <div className="mt-8">
-          <EmptyState message="No data found for the selected date range." />
+          <EmptyState 
+            isDateFiltered={true}
+            message="There is no data available for the selected time period. Try selecting a different date range or check if data exists in the system." 
+          />
         </div>
       )}
       
