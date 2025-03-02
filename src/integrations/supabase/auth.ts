@@ -1,4 +1,3 @@
-
 import { supabase } from "./client";
 import { toast } from "@/components/ui/use-toast";
 
@@ -69,6 +68,30 @@ export const login = async (
     return { 
       error: { 
         message: "An unexpected error occurred. Please try again." 
+      } 
+    };
+  }
+};
+
+export const signInWithGoogle = async (): Promise<{ error: AuthError | null }> => {
+  try {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin,
+      },
+    });
+
+    if (error) {
+      return { error: { message: error.message } };
+    }
+
+    return { error: null };
+  } catch (err) {
+    console.error("Google sign in error:", err);
+    return { 
+      error: { 
+        message: "An unexpected error occurred during Google sign in. Please try again." 
       } 
     };
   }

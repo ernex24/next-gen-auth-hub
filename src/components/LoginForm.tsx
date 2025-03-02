@@ -1,9 +1,8 @@
 
 import React, { useState } from 'react';
-import { Eye, EyeOff } from 'lucide-react';
-import { Apple, Chrome } from 'lucide-react';
+import { Eye, EyeOff, Chrome } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { login } from '@/integrations/supabase/auth';
+import { login, signInWithGoogle } from '@/integrations/supabase/auth';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/components/ui/use-toast';
 
@@ -17,6 +16,7 @@ const LoginForm = ({ onToggle }: LoginFormProps) => {
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
   const { user } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -35,6 +35,22 @@ const LoginForm = ({ onToggle }: LoginFormProps) => {
     }
     
     setIsSubmitting(false);
+  };
+
+  const handleGoogleSignIn = async () => {
+    setIsGoogleSubmitting(true);
+    
+    const { error } = await signInWithGoogle();
+    
+    if (error) {
+      toast({
+        title: "Google sign in failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+    
+    setIsGoogleSubmitting(false);
   };
 
   return (
@@ -121,21 +137,18 @@ const LoginForm = ({ onToggle }: LoginFormProps) => {
         <div className="relative px-4 bg-auth-dark text-sm text-gray-400">Or continue with</div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-1 gap-3">
         <button
           type="button"
-          className="social-button flex items-center justify-center text-white"
+          disabled={isGoogleSubmitting}
+          onClick={handleGoogleSignIn}
+          className={cn(
+            "social-button flex items-center justify-center text-white",
+            isGoogleSubmitting && "opacity-70 cursor-not-allowed"
+          )}
         >
           <Chrome size={18} className="mr-2" />
-          <span>Google</span>
-        </button>
-        
-        <button
-          type="button"
-          className="social-button flex items-center justify-center text-white"
-        >
-          <Apple size={18} className="mr-2" />
-          <span>Apple</span>
+          <span>{isGoogleSubmitting ? "Connecting..." : "Google"}</span>
         </button>
       </div>
     </div>
