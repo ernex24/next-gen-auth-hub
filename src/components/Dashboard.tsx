@@ -40,6 +40,7 @@ const Dashboard = () => {
   const [activeUsers, setActiveUsers] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [debugInfo, setDebugInfo] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: subDays(new Date(), 13),
     to: new Date(),
@@ -49,90 +50,116 @@ const Dashboard = () => {
 
   useEffect(() => {
     const fetchDashboardData = async () => {
-      if (!user) return;
-      
       try {
         setLoading(true);
         setError(null);
         
+        if (!user) {
+          console.log("No authenticated user found!");
+          setDebugInfo("No authenticated user found");
+          setLoading(false);
+          return;
+        }
+        
         console.log("Fetching data for user ID:", user.id);
         
         // Fetch sales data
-        const { data: salesData, error: salesError } = await supabase
+        const salesResult = await supabase
           .from('sales_data')
           .select('date, amount')
           .order('date', { ascending: true });
         
-        if (salesError) {
-          console.error('Sales data error:', salesError);
-          // Continue execution even if there's an error
+        if (salesResult.error) {
+          console.error('Sales data error:', salesResult.error);
+          setDebugInfo(`Sales data error: ${salesResult.error.message}`);
         } else {
-          console.log("Sales data fetched:", salesData?.length || 0, "records");
+          console.log("Sales data fetched:", salesResult.data?.length || 0, "records");
           
-          // Process sales data for the chart
-          const processedSalesData = (salesData || [])
-            .map(item => ({
+          if (salesResult.data && salesResult.data.length > 0) {
+            // Process sales data for the chart
+            const processedSalesData = salesResult.data.map(item => ({
               date: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
               amount: Number(item.amount),
               fullDate: item.date
             }));
-          
-          setAllSalesData(processedSalesData);
+            
+            setAllSalesData(processedSalesData);
+          } else {
+            console.log("No sales data found");
+            setDebugInfo(debugInfo => `${debugInfo || ""}\nNo sales data found in database`);
+          }
         }
         
         // Fetch customers
-        const { data: customersData, error: customersError } = await supabase
+        const customersResult = await supabase
           .from('customers')
           .select('*')
           .order('purchase_date', { ascending: false });
         
-        if (customersError) {
-          console.error('Customers error:', customersError);
-          // Continue execution even if there's an error
+        if (customersResult.error) {
+          console.error('Customers error:', customersResult.error);
+          setDebugInfo(debugInfo => `${debugInfo || ""}\nCustomers error: ${customersResult.error.message}`);
         } else {
-          console.log("Customers fetched:", customersData?.length || 0, "records");
-          setAllCustomers(customersData || []);
+          console.log("Customers fetched:", customersResult.data?.length || 0, "records");
+          
+          if (customersResult.data && customersResult.data.length > 0) {
+            setAllCustomers(customersResult.data);
+          } else {
+            console.log("No customers found");
+            setDebugInfo(debugInfo => `${debugInfo || ""}\nNo customers found in database`);
+          }
         }
         
         // Fetch views count
-        const { data: viewsData, error: viewsError } = await supabase
+        const viewsResult = await supabase
           .from('views_data')
           .select('count')
           .order('date', { ascending: false })
           .limit(1);
         
-        if (!viewsError && viewsData && viewsData.length > 0) {
-          console.log("Views data:", viewsData[0]);
-          setViewsCount(viewsData[0].count);
-        } else if (viewsError) {
-          console.error('Views data error:', viewsError);
-          // Don't throw error, just log it
+        if (viewsResult.error) {
+          console.error('Views data error:', viewsResult.error);
+          setDebugInfo(debugInfo => `${debugInfo || ""}\nViews data error: ${viewsResult.error.message}`);
+        } else if (viewsResult.data && viewsResult.data.length > 0) {
+          console.log("Views data:", viewsResult.data[0]);
+          setViewsCount(viewsResult.data[0].count);
+        } else {
+          console.log("No views data found");
+          setDebugInfo(debugInfo => `${debugInfo || ""}\nNo views data found in database`);
         }
         
         // Fetch active users
-        const { data: usersData, error: usersError } = await supabase
+        const usersResult = await supabase
           .from('active_users')
           .select('count')
           .order('date', { ascending: false })
           .limit(1);
         
-        if (!usersError && usersData && usersData.length > 0) {
-          console.log("Active users data:", usersData[0]);
-          setActiveUsers(usersData[0].count);
-        } else if (usersError) {
-          console.error('Active users error:', usersError);
-          // Don't throw error, just log it
+        if (usersResult.error) {
+          console.error('Active users error:', usersResult.error);
+          setDebugInfo(debugInfo => `${debugInfo || ""}\nActive users error: ${usersResult.error.message}`);
+        } else if (usersResult.data && usersResult.data.length > 0) {
+          console.log("Active users data:", usersResult.data[0]);
+          setActiveUsers(usersResult.data[0].count);
+        } else {
+          console.log("No active users data found");
+          setDebugInfo(debugInfo => `${debugInfo || ""}\nNo active users data found in database`);
         }
+        
+        // Force loading to false even if we have some errors
+        // This way the dashboard can still render with partial data
+        setLoading(false);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
-        setError('Failed to load dashboard data. Please check the console for details.');
+        let errorMessage = 'Failed to load dashboard data. Please check the console for details.';
+        if (error instanceof Error) errorMessage += ` Error: ${error.message}`;
+        
+        setError(errorMessage);
         toast({
           title: "Error",
           description: "Failed to load dashboard data. Please check the console for details.",
           variant: "destructive",
         });
-      } finally {
-        // Always end loading state, even if there are errors
         setLoading(false);
       }
     };
@@ -141,7 +168,7 @@ const Dashboard = () => {
   }, [toast, user]);
 
   useEffect(() => {
-    if (dateRange?.from && dateRange?.to) {
+    if (dateRange?.from && dateRange?.to && allSalesData.length > 0) {
       const filteredSalesData = allSalesData.filter(item => {
         if (!item.fullDate) return false;
         const itemDate = parseISO(item.fullDate);
@@ -170,28 +197,20 @@ const Dashboard = () => {
   };
 
   if (loading) {
-    return <LoadingState />;
+    return <LoadingState debug={true} error={error} />;
   }
 
-  if (error) {
+  // Check if we have any data at all
+  const hasAnyData = allSalesData.length > 0 || allCustomers.length > 0 || viewsCount > 0 || activeUsers > 0;
+
+  if (!hasAnyData) {
     return (
       <div className="container px-6 py-8 mx-auto">
         <h1 className="text-2xl font-semibold text-foreground">Dashboard</h1>
         <p className="mt-2 text-muted-foreground">Welcome to your dashboard</p>
-        <div className="mt-6 p-4 bg-destructive/10 rounded-md text-destructive">
-          {error}
-        </div>
-        <EmptyState message="There was an error loading your dashboard data. Please try again later." />
-      </div>
-    );
-  }
-
-  if (allSalesData.length === 0 && allCustomers.length === 0) {
-    return (
-      <div className="container px-6 py-8 mx-auto">
-        <h1 className="text-2xl font-semibold text-foreground">Dashboard</h1>
-        <p className="mt-2 text-muted-foreground">Welcome to your dashboard</p>
-        <EmptyState />
+        <EmptyState message={
+          debugInfo ? `Debug info: ${debugInfo}` : "No data available yet. Data will appear here once it's generated."
+        } />
       </div>
     );
   }
@@ -258,6 +277,19 @@ const Dashboard = () => {
       {salesData.length === 0 && customers.length === 0 && (
         <div className="mt-8">
           <EmptyState message="No data found for the selected date range." />
+        </div>
+      )}
+      
+      {error && (
+        <div className="mt-6 p-4 bg-destructive/10 rounded-md text-destructive">
+          {error}
+        </div>
+      )}
+      
+      {debugInfo && (
+        <div className="mt-6 p-4 bg-muted rounded-md">
+          <h3 className="font-medium">Debug Information:</h3>
+          <pre className="text-xs mt-2 whitespace-pre-wrap">{debugInfo}</pre>
         </div>
       )}
     </div>
