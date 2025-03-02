@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
@@ -19,6 +18,7 @@ import { formatCurrency, formatLargeNumber } from './dashboard/utils';
 interface SalesData {
   date: string;
   amount: number;
+  fullDate?: string;
 }
 
 interface Customer {
@@ -72,7 +72,7 @@ const Dashboard = () => {
           .map(item => ({
             date: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
             amount: Number(item.amount),
-            fullDate: item.date // Keep the full date for filtering
+            fullDate: item.date
           }));
         
         setAllSalesData(processedSalesData);
@@ -133,28 +133,26 @@ const Dashboard = () => {
     fetchDashboardData();
   }, [toast, user]);
 
-  // Filter data whenever the date range changes
   useEffect(() => {
     if (dateRange?.from && dateRange?.to) {
-      // Filter sales data based on date range
       const filteredSalesData = allSalesData.filter(item => {
+        if (!item.fullDate) return false;
         const itemDate = parseISO(item.fullDate);
         return isWithinInterval(itemDate, { 
           start: dateRange.from!, 
           end: dateRange.to! 
         });
-      }).map(({ date, amount }) => ({ date, amount })); // Remove fullDate from the filtered data
+      }).map(({ date, amount }) => ({ date, amount }));
       
       setSalesData(filteredSalesData);
       
-      // Filter customers based on date range
       const filteredCustomers = allCustomers.filter(customer => {
         const purchaseDate = parseISO(customer.purchase_date);
         return isWithinInterval(purchaseDate, { 
           start: dateRange.from!, 
           end: dateRange.to! 
         });
-      }).slice(0, 5); // Only take the first 5 for display
+      }).slice(0, 5);
       
       setCustomers(filteredCustomers);
     }
@@ -168,7 +166,6 @@ const Dashboard = () => {
     return <LoadingState />;
   }
 
-  // Show empty state if no data is available
   if (allSalesData.length === 0 && allCustomers.length === 0) {
     return (
       <div className="container px-6 py-8 mx-auto">
@@ -195,7 +192,6 @@ const Dashboard = () => {
       </div>
       
       <div className="grid grid-cols-1 gap-6 mt-8 md:grid-cols-2 lg:grid-cols-4">
-        {/* Revenue Card */}
         <StatCard 
           title="Revenue" 
           value={salesData.length > 0 
@@ -205,7 +201,6 @@ const Dashboard = () => {
           percentageChange={12.5}
         />
 
-        {/* Subscriptions Card */}
         <StatCard 
           title="Subscriptions" 
           value={customers.length}
@@ -213,7 +208,6 @@ const Dashboard = () => {
           percentageChange={4.2}
         />
 
-        {/* Active Users Card */}
         <StatCard 
           title="Active Now" 
           value={activeUsers}
@@ -221,7 +215,6 @@ const Dashboard = () => {
           subtitle="Active users right now"
         />
 
-        {/* Page Views Card */}
         <StatCard 
           title="Page Views" 
           value={formatLargeNumber(viewsCount)}
@@ -230,21 +223,18 @@ const Dashboard = () => {
         />
       </div>
       
-      {/* Charts */}
       {salesData.length > 0 && (
         <div className="grid grid-cols-1 gap-6 mt-8">
           <RevenueChart salesData={salesData} formatCurrency={formatCurrency} />
         </div>
       )}
       
-      {/* Recent Customers */}
       {customers.length > 0 && (
         <div className="mt-8">
           <CustomersTable customers={customers} />
         </div>
       )}
       
-      {/* Empty state if filtered data is empty */}
       {salesData.length === 0 && customers.length === 0 && (
         <div className="mt-8">
           <EmptyState message="No data found for the selected date range." />
