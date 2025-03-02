@@ -9,6 +9,63 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      active_users: {
+        Row: {
+          count: number
+          created_at: string | null
+          date: string
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          count: number
+          created_at?: string | null
+          date: string
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          count?: number
+          created_at?: string | null
+          date?: string
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      customers: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          name: string
+          purchase_date: string | null
+          subscription_status: string
+          total_revenue: number
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          name: string
+          purchase_date?: string | null
+          subscription_status?: string
+          total_revenue?: number
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          name?: string
+          purchase_date?: string | null
+          subscription_status?: string
+          total_revenue?: number
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           first_name: string | null
@@ -27,6 +84,54 @@ export type Database = {
           id?: string
           last_name?: string | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      sales_data: {
+        Row: {
+          amount: number
+          created_at: string | null
+          date: string
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          date: string
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          date?: string
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      views_data: {
+        Row: {
+          count: number
+          created_at: string | null
+          date: string
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          count: number
+          created_at?: string | null
+          date: string
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          count?: number
+          created_at?: string | null
+          date?: string
+          id?: string
+          user_id?: string | null
         }
         Relationships: []
       }

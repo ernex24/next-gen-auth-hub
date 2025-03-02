@@ -1,7 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import AuthLayout from '@/components/AuthLayout';
 import SignupForm from '@/components/SignupForm';
 import LoginForm from '@/components/LoginForm';
+import Dashboard from '@/components/Dashboard';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { signOut } from '@/integrations/supabase/auth';
@@ -29,17 +31,22 @@ const Index = () => {
 
   if (user) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-auth-dark p-6">
-        <div className="bg-auth-input bg-opacity-20 p-8 rounded-lg max-w-md w-full">
-          <h1 className="text-2xl font-semibold text-white mb-4">Welcome to Your Dashboard</h1>
-          <p className="text-white mb-6">You are logged in as: {user.email}</p>
-          <button 
-            onClick={signOut}
-            className="auth-button"
-          >
-            Sign Out
-          </button>
-        </div>
+      <div className="min-h-screen bg-background">
+        <header className="bg-background border-b border-border py-4">
+          <div className="container flex justify-between items-center px-6 mx-auto">
+            <h1 className="text-xl font-semibold text-foreground">Analytics Dashboard</h1>
+            <button 
+              onClick={signOut}
+              className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-md text-sm transition-colors"
+            >
+              Sign Out
+            </button>
+          </div>
+        </header>
+        
+        <main>
+          <Dashboard />
+        </main>
       </div>
     );
   }
