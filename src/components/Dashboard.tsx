@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
@@ -38,6 +39,7 @@ const Dashboard = () => {
   const [viewsCount, setViewsCount] = useState<number>(0);
   const [activeUsers, setActiveUsers] = useState<number>(0);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: subDays(new Date(), 13),
     to: new Date(),
@@ -51,6 +53,7 @@ const Dashboard = () => {
       
       try {
         setLoading(true);
+        setError(null);
         
         console.log("Fetching data for user ID:", user.id);
         
@@ -62,20 +65,20 @@ const Dashboard = () => {
         
         if (salesError) {
           console.error('Sales data error:', salesError);
-          throw salesError;
+          // Continue execution even if there's an error
+        } else {
+          console.log("Sales data fetched:", salesData?.length || 0, "records");
+          
+          // Process sales data for the chart
+          const processedSalesData = (salesData || [])
+            .map(item => ({
+              date: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+              amount: Number(item.amount),
+              fullDate: item.date
+            }));
+          
+          setAllSalesData(processedSalesData);
         }
-        
-        console.log("Sales data fetched:", salesData?.length || 0, "records");
-        
-        // Process sales data for the chart
-        const processedSalesData = (salesData || [])
-          .map(item => ({
-            date: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-            amount: Number(item.amount),
-            fullDate: item.date
-          }));
-        
-        setAllSalesData(processedSalesData);
         
         // Fetch customers
         const { data: customersData, error: customersError } = await supabase
@@ -85,11 +88,11 @@ const Dashboard = () => {
         
         if (customersError) {
           console.error('Customers error:', customersError);
-          throw customersError;
+          // Continue execution even if there's an error
+        } else {
+          console.log("Customers fetched:", customersData?.length || 0, "records");
+          setAllCustomers(customersData || []);
         }
-        
-        console.log("Customers fetched:", customersData?.length || 0, "records");
-        setAllCustomers(customersData || []);
         
         // Fetch views count
         const { data: viewsData, error: viewsError } = await supabase
@@ -103,6 +106,7 @@ const Dashboard = () => {
           setViewsCount(viewsData[0].count);
         } else if (viewsError) {
           console.error('Views data error:', viewsError);
+          // Don't throw error, just log it
         }
         
         // Fetch active users
@@ -117,15 +121,18 @@ const Dashboard = () => {
           setActiveUsers(usersData[0].count);
         } else if (usersError) {
           console.error('Active users error:', usersError);
+          // Don't throw error, just log it
         }
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
+        setError('Failed to load dashboard data. Please check the console for details.');
         toast({
           title: "Error",
           description: "Failed to load dashboard data. Please check the console for details.",
           variant: "destructive",
         });
       } finally {
+        // Always end loading state, even if there are errors
         setLoading(false);
       }
     };
@@ -164,6 +171,19 @@ const Dashboard = () => {
 
   if (loading) {
     return <LoadingState />;
+  }
+
+  if (error) {
+    return (
+      <div className="container px-6 py-8 mx-auto">
+        <h1 className="text-2xl font-semibold text-foreground">Dashboard</h1>
+        <p className="mt-2 text-muted-foreground">Welcome to your dashboard</p>
+        <div className="mt-6 p-4 bg-destructive/10 rounded-md text-destructive">
+          {error}
+        </div>
+        <EmptyState message="There was an error loading your dashboard data. Please try again later." />
+      </div>
+    );
   }
 
   if (allSalesData.length === 0 && allCustomers.length === 0) {
