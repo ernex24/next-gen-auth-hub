@@ -3,11 +3,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@font-face {
-  font-family: 'Inter';
-  src: url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-  font-display: swap;
-}
+/* Removed incorrect @font-face declaration that was causing errors */
 
 @layer base {
   :root {
@@ -140,3 +136,4 @@
     @apply opacity-100 bg-white;
   }
 }
+
