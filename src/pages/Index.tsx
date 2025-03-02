@@ -4,6 +4,7 @@ import AuthLayout from '@/components/AuthLayout';
 import SignupForm from '@/components/SignupForm';
 import LoginForm from '@/components/LoginForm';
 import Dashboard from '@/components/Dashboard';
+import LoadingState from '@/components/dashboard/LoadingState';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { signOut } from '@/integrations/supabase/auth';
@@ -25,15 +26,38 @@ const Index = () => {
         description: "Please try signing in again or use incognito mode.",
         variant: "destructive",
       });
-      // Clear browser storage to prevent persistence issues
-      localStorage.clear();
-      sessionStorage.clear();
       console.error("Auth error:", error);
     }
   }, [error, toast]);
 
   const toggleForm = () => {
     setIsSignup(!isSignup);
+  };
+
+  const handleResetSession = async () => {
+    try {
+      // Clear browser storage
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      // Sign out the user
+      await signOut();
+      
+      toast({
+        title: "Session Reset",
+        description: "Your session has been reset. Please sign in again.",
+      });
+      
+      // Force page reload to clear any in-memory state
+      window.location.reload();
+    } catch (err) {
+      console.error("Reset session error:", err);
+      toast({
+        title: "Reset Failed",
+        description: "Could not reset session. Please try refreshing the page.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSignOut = async () => {
@@ -58,8 +82,13 @@ const Index = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-auth-dark">
-        <div className="text-white">Loading...</div>
+      <div className="min-h-screen bg-background">
+        <LoadingState 
+          message="Loading authentication state..." 
+          debug={true}
+          error={error ? String(error) : null}
+          onReset={handleResetSession}
+        />
       </div>
     );
   }
