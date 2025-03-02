@@ -1,6 +1,13 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@font-face {
+  font-family: 'Inter';
+  src: url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+  font-display: swap;
+}
 
 @layer base {
   :root {
@@ -13,7 +20,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 222.2 47.4% 11.2%;
+    --primary: 263 85% 60%;
     --primary-foreground: 210 40% 98%;
 
     --secondary: 210 40% 96.1%;
@@ -30,24 +37,17 @@
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --ring: 263 85% 60%;
 
     --radius: 0.5rem;
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
@@ -61,8 +61,8 @@
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 263 85% 60%;
+    --primary-foreground: 210 40% 98%;
 
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
@@ -78,7 +78,8 @@
 
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --ring: 263 85% 60%;
+    
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
@@ -93,9 +94,49 @@
 @layer base {
   * {
     @apply border-border;
+    font-family: 'Inter', sans-serif;
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+  }
+
+  input, textarea {
+    @apply transition-all duration-200;
+  }
+
+  input::placeholder, textarea::placeholder {
+    @apply text-gray-400;
+  }
+
+  .auth-input {
+    @apply bg-auth-input border-0 rounded-md w-full py-3 px-4 text-white transition-all;
+    @apply focus:ring-2 focus:ring-auth-purple-light focus:outline-none;
+  }
+
+  .auth-input-icon {
+    @apply absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400;
+  }
+
+  .auth-button {
+    @apply bg-auth-purple hover:bg-auth-purple-light transition-all duration-300 text-white py-3 px-6 rounded-md w-full;
+    @apply focus:ring-2 focus:ring-auth-purple-light focus:ring-offset-2 focus:ring-offset-auth-dark focus:outline-none;
+  }
+
+  .social-button {
+    @apply border border-gray-600 hover:border-gray-500 bg-auth-input hover:bg-opacity-20 transition-all duration-300 py-3 px-6 rounded-md;
+    @apply focus:ring-2 focus:ring-auth-purple-light focus:ring-offset-2 focus:ring-offset-auth-dark focus:outline-none;
+  }
+
+  .hero-dots-container {
+    @apply absolute bottom-16 left-1/2 transform -translate-x-1/2 flex gap-3;
+  }
+
+  .hero-dot {
+    @apply w-8 h-[3px] rounded-full bg-white opacity-30 transition-all duration-300;
+  }
+  
+  .hero-dot.active {
+    @apply opacity-100 bg-white;
   }
 }
